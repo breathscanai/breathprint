@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BreathScan AI</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Crect width='44' height='44' rx='12' fill='%232a78d6'/%3E%3Cpath d='M9 17c5 0 5 4 10 4s5-4 10-4 5 4 6 4M9 24c5 0 5 4 10 4s5-4 10-4 5 4 6 4' stroke='%23fff' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>:root{
+  --bg:#f3f5f9; --card:#ffffff; --ink:#14213d; --muted:#5d6b85; --line:#e3e8f0;
+  --navy:#0e1b33; --navy2:#16284a; --blue:#2a78d6; --orange:#eb6834; --green:#1baf7a; --gold:#e8a317;
+  --shadow:0 1px 2px rgba(20,33,61,.06),0 6px 24px rgba(20,33,61,.06);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1324; --card:#121d33; --ink:#e8eefb; --muted:#9aa8c3; --line:#22314f; --navy:#070e1c; --navy2:#0f1a30;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25);color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0b1324; --card:#121d33; --ink:#e8eefb; --muted:#9aa8c3; --line:#22314f; --navy:#070e1c; --navy2:#0f1a30;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25);color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 16px;font-weight:600}
+button:disabled{opacity:.45;cursor:not-allowed}
+.btn{background:var(--blue);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.wrap{max-width:1240px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.gas,.sig,.panel,.two>*{min-width:0}
+
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand h1{margin:0;font-size:26px;letter-spacing:-.5px}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pill{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:14px;color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:#c4483d}
+.dot.on{background:var(--green);box-shadow:0 0 0 4px rgba(27,175,122,.18)}
+
+/* coach */
+.coach{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border-radius:20px;padding:26px 28px;display:grid;grid-template-columns:1fr 170px;gap:20px;align-items:center;box-shadow:var(--shadow)}
+.coach .step{font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:#9fb6e0;font-weight:700}
+.coach h2{margin:8px 0 6px;font-size:52px;line-height:1.05;letter-spacing:-1.5px}
+.coach .sub{font-size:19px;color:#c9d6ee;margin:0}
+.ring{position:relative;width:160px;height:160px}
+.ring svg{transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring .num b{font-size:40px;line-height:1}
+.ring .num span{font-size:13px;color:#c9d6ee;margin-top:4px;max-width:120px}
+.track{grid-column:1/-1;display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:6px}
+.track div{font-size:13px;color:#7f93b8;padding-top:10px;border-top:4px solid rgba(255,255,255,.14)}
+.track div.done{color:#c9d6ee;border-top-color:rgba(255,255,255,.55)}
+.track div.now{color:#fff;font-weight:700;border-top-color:var(--gold)}
+
+h3.sec{font-size:15px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:28px 0 12px}
+h3.sec small{text-transform:none;letter-spacing:0;font-weight:400;margin-left:8px}
+
+/* gas cards */
+.gases{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.gas{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px}
+.gas .name{font-size:20px;font-weight:700;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.gas .name small{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.gas .why{font-size:14px;color:var(--muted);line-height:1.4;min-height:39px}
+.meter{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;width:0;border-radius:99px;background:var(--blue);transition:width .5s}
+.gas .say{font-size:16px;font-weight:700}
+.gas .raw{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.signals{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.sig{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow)}
+.sig .l{font-size:15px;font-weight:700}.sig .l small{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:2px}
+.sig .v{white-space:nowrap;margin-left:10px;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+
+/* chart + print */
+.two{display:grid;grid-template-columns:1.5fr 1fr;gap:14px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tabs button{padding:7px 12px;font-size:14px;background:transparent;color:var(--muted);border:1.5px solid var(--line)}
+.tabs button.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+canvas{width:100%;display:block}
+#chart{height:300px}
+#radar{height:330px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;color:var(--muted);margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;background:var(--c);margin-right:6px;vertical-align:middle}
+.note{font-size:14px;color:var(--muted);line-height:1.45;margin:8px 0 0}
+
+/* result */
+.result{background:var(--card);border:2px solid var(--blue);border-radius:20px;padding:24px 26px;box-shadow:var(--shadow)}
+.result h2{margin:0 0 4px;font-size:30px;letter-spacing:-.5px}
+.scale{margin:22px 0 6px}
+.scale .lab{display:flex;justify-content:space-between;font-weight:700;font-size:16px;margin-bottom:8px}
+.bar{position:relative;height:16px;border-radius:99px}
+.bar .mk{position:absolute;top:50%;width:28px;height:28px;border-radius:50%;background:var(--card);border:5px solid var(--ink);transform:translate(-50%,-50%);transition:left .8s}
+.scale .say{font-size:15px;color:var(--muted);margin-top:10px}
+.disclaimer{margin-top:18px;padding:12px 14px;border-radius:12px;background:var(--bg);font-size:14px;color:var(--muted)}
+
+/* researcher */
+details.res{margin-top:28px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 18px}
+details.res summary{cursor:pointer;font-weight:700;color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.row input[type=number]{width:80px;padding:9px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+#log{margin-top:12px;max-height:160px;overflow:auto;font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);white-space:pre-wrap;background:var(--bg);border-radius:10px;padding:10px}
+.demos{display:flex;gap:10px;flex-wrap:wrap}
+footer{margin-top:28px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6}
+.warn{background:var(--bg);color:var(--ink);border:1.5px solid var(--gold);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:15px}
+
+@media (max-width:900px){
+  .gases,.signals{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}
+  .coach{grid-template-columns:1fr}.ring{margin:0 auto}.coach h2{font-size:40px}
+  .track{grid-template-columns:repeat(4,1fr)}
+}
+@media (max-width:560px){.gases,.signals{grid-template-columns:1fr}.coach h2{font-size:34px}.track{grid-template-columns:repeat(2,1fr)}}
+
+.guide{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.guide .g{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--line)}
+.guide b{flex:none;width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:14px}
+.guide strong{display:block;font-size:15px}.guide span{display:block;font-size:14px;color:var(--muted);margin-top:2px;line-height:1.4}
+.help{font-size:15px;color:var(--muted);margin:-4px 0 14px;max-width:70ch;line-height:1.5}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.flow .f{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.flow i{font-style:normal;font-weight:800;color:var(--blue);font-size:13px;letter-spacing:1px}
+.flow strong{font-size:18px}.flow span{font-size:14px;color:var(--muted);line-height:1.4}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
+.facts div{padding:14px 18px;border-radius:16px;background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff}
+.facts b{display:block;font-size:30px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}.facts span{font-size:13px;color:#c9d6ee;line-height:1.35;display:block;margin-top:2px}
+@media (max-width:900px){.guide{grid-template-columns:1fr}.flow,.facts{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.flow,.facts{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style></head><body>
+<div class="wrap">
+<header class="top">
+  <div class="brand">
+    <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><rect width="44" height="44" rx="12" fill="#2a78d6"/><path d="M9 17c5 0 5 4 10 4s5-4 10-4 5 4 6 4M9 24c5 0 5 4 10 4s5-4 10-4 5 4 6 4" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+    <div><h1>BreathScan AI</h1><p>One breath. Four sensors. One AI.</p></div>
+  </div>
+  <div class="right">
+    <div class="pill"><span class="dot" id="dot"></span><span id="stxt">Not connected</span></div>
+    <button class="btn" id="connect">Connect device</button>
+  </div>
+</header>
+
+<div class="warn" id="nosupport" hidden>This browser can't talk to the device. Open this page in <b>Google Chrome</b> or <b>Microsoft Edge</b> on a laptop. (Demos still work.)</div>
+
+<section class="guide" aria-label="How to read this screen">
+  <div class="g"><b>1</b><div><strong>Follow the coach</strong><span>The big panel tells you when to wait, breathe and rest.</span></div></div>
+  <div class="g"><b>2</b><div><strong>See what changed</strong><span>The gas cards show what your breath added to the air.</span></div></div>
+  <div class="g"><b>3</b><div><strong>Meet the AI</strong><span>Your breath's shape is compared with my 15 volunteers.</span></div></div>
+</section>
+
+<section class="coach" aria-live="polite">
+  <div>
+    <div class="step" id="cstep">Getting started</div>
+    <h2 id="cbig">Plug in BreathScan</h2>
+    <p class="sub" id="csub">Connect the USB cable, then click "Connect device". Or watch a demo below.</p>
+  </div>
+  <div class="ring" id="ring">
+    <svg width="160" height="160"><circle cx="80" cy="80" r="68" stroke="rgba(255,255,255,.14)" stroke-width="12" fill="none"/><circle id="ringArc" cx="80" cy="80" r="68" stroke="#e8a317" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="427.3" stroke-dashoffset="427.3"/></svg>
+    <div class="num"><b id="rnum">–</b><span id="rlab">waiting</span></div>
+  </div>
+  <div class="track" id="track"></div>
+</section>
+
+<h3 class="sec">What's in your breath</h3>
+<p class="help">First the device measures plain room air. Then each card shows how much your breath changed that gas. A longer bar means a bigger change.</p>
+<div class="gases" id="gases"></div>
+<div class="signals" id="signals"></div>
+
+<div class="two" style="margin-top:14px">
+  <div class="panel">
+    <div class="tabs" id="tabs"></div>
+    <canvas id="chart"></canvas>
+    <p class="note">Live, one reading every second. <b style="color:var(--blue)">Blue bands</b> show when a breath is going in.</p>
+  </div>
+  <div class="panel">
+    <div style="font-weight:700;font-size:18px">Your BreathPrint</div>
+    <p class="note" style="margin-top:4px">Each corner is one gas. The farther out the point, the more your breath changed it. The dashed shapes are the averages of my volunteer groups. <b>If your solid line looks like one of the dashed shapes, your breath looks like that group.</b></p>
+    <canvas id="radar"></canvas>
+    <div class="legend"><span style="--c:var(--ink)">Your breath</span><span style="--c:#2a78d6">Healthy avg</span><span style="--c:#eb6834">Type 2 diabetes avg</span><span style="--c:#1baf7a">Asthma avg</span></div>
+  </div>
+</div>
+
+<section class="result" id="result" hidden style="margin-top:14px">
+  <div class="step" style="font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);font-weight:700">AI pattern match</div>
+  <h2 id="rtitle">Your breath pattern</h2>
+  <div class="note" id="rnote"></div>
+  <p class="help" style="margin:12px 0 0">The dot shows which side your breath is closer to. In the middle means no clear match.</p>
+  <div class="scale"><div class="lab"><span style="color:#2a78d6">Healthy pattern</span><span style="color:#eb6834">Type 2 diabetes pattern</span></div>
+    <div class="bar" style="background:linear-gradient(90deg,#2a78d6,#c9d3e3 50%,#eb6834)"><div class="mk" id="mkT"></div></div>
+    <div class="say" id="sayT"></div></div>
+  <div class="scale"><div class="lab"><span style="color:#2a78d6">Healthy pattern</span><span style="color:#1baf7a">Asthma pattern</span></div>
+    <div class="bar" style="background:linear-gradient(90deg,#2a78d6,#c9d3e3 50%,#1baf7a)"><div class="mk" id="mkA"></div></div>
+    <div class="say" id="sayA"></div></div>
+  <div class="disclaimer"><b>This is not a diagnosis.</b> It's a pilot study with 15 volunteers. The AI was right 82% of the time for Type 2 diabetes vs. healthy and 70% for asthma vs. healthy, tested on people it had never seen. Only a doctor can test for these conditions.</div>
+</section>
+
+<h3 class="sec">How BreathScan works</h3>
+<div class="flow">
+  <div class="f"><i>1</i><strong>Breathe</strong><span>Into a clean, single-use mouthpiece on the sealed box.</span></div>
+  <div class="f"><i>2</i><strong>Sense</strong><span>4 gas sensors take 9 readings every second.</span></div>
+  <div class="f"><i>3</i><strong>Measure</strong><span>An Arduino finds how much each breath changed every gas.</span></div>
+  <div class="f"><i>4</i><strong>Compare</strong><span>AI trained on 15 volunteers looks for the matching pattern.</span></div>
+</div>
+<div class="facts">
+  <div><b>15</b><span>adult volunteers, IRB approved with signed consent</span></div>
+  <div><b>82%</b><span>correct, Type 2 diabetes vs. healthy (guessing: 55%)</span></div>
+  <div><b>70%</b><span>correct, asthma vs. healthy (guessing: 60%)</span></div>
+  <div><b>$150</b><span>or less to build. No needles, no lab.</span></div>
+</div>
+
+<h3 class="sec">Watch a demo <small>real data saved from my study, replayed</small></h3>
+<div class="demos" id="demos"></div>
+
+<details class="res">
+  <summary>Researcher tools</summary>
+  <div class="row">
+    <label>Participant # <input type="number" id="pnum" min="1" value="1"></label>
+    <button class="btn ghost" id="setp" disabled>Set participant</button>
+    <button class="btn ghost" id="save" disabled>Save data (CSV)</button>
+    <button class="btn ghost" id="replay">Replay a saved file</button>
+    <button class="btn ghost" id="clear">Clear</button>
+    <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="showAI" checked> Show AI result after breath 3</label>
+    <input type="file" id="file" accept=".csv,.txt" hidden>
+  </div>
+  <div id="log"></div>
+</details>
+
+<footer>A project by Wasif Shaik · South Iredell High School<br>Pilot research project. Not a medical device.</footer>
+</div>
+
+<script>const MODEL={"features": ["d_MQ3", "d_CO", "d_NH3", "d_NO2", "d_SRAW_VOC", "d_SRAW_NOX"], "models": {"T2D": {"vs": "Healthy", "loo_acc": 0.818, "n": 11, "mean": [5.5145, 8.6373, 5.97, 3.5755, -478.0618, 181.03], "scale": [3.0946, 4.9732, 6.6521, 7.1196, 396.0713, 153.6348], "coef": [0.2404, -0.7099, 0.436, 0.4727, 0.4771, -0.9274], "intercept": -0.1938}, "Asthma": {"vs": "Healthy", "loo_acc": 0.7, "n": 10, "mean": [5.483, 8.75, 5.784, 2.7, -658.102, 227.2], "scale": [2.3414, 3.2704, 3.9772, 2.8655, 404.921, 138.2299], "coef": [-0.3323, -0.3813, 0.767, 0.8975, 0.0888, -0.8317], "intercept": -0.2226}}, "group_means": {"Asthma": {"d_MQ3": 5.21, "d_CO": 7.79, "d_NH3": 7.38, "d_NO2": 4.92, "d_SRAW_VOC": -658.34, "d_SRAW_NOX": 147.67}, "Healthy": {"d_MQ3": 5.66, "d_CO": 9.39, "d_NH3": 4.72, "d_NO2": 1.22, "d_SRAW_VOC": -657.95, "d_SRAW_NOX": 280.22}, "T2D": {"d_MQ3": 5.33, "d_CO": 7.73, "d_NH3": 7.47, "d_NO2": 6.4, "d_SRAW_VOC": -262.2, "d_SRAW_NOX": 62.0}}};
+const DEMOS={"P9": {"label": "A healthy volunteer", "lines": ["189,9,1,BREATH,741,849,896,364,29634,16769,416,24.41,61.9", "190,9,1,BREATH,743,850,897,365,29648,16772,417,24.42,61.9", "191,9,1,BREATH,746,853,900,366,29558,16765,417,24.42,61.9", "192,9,1,BREATH,747,854,898,366,29410,16806,467,24.50,63.3", "193,9,1,BREATH,749,857,898,368,29305,16956,5019,24.58,68.8", "194,9,1,BREATH,749,857,899,366,29296,17090,9557,24.57,74.5", "195,9,1,BREATH,751,858,899,367,29258,17184,12934,24.58,78.9", "196,9,1,BREATH,749,856,899,366,29232,17254,15348,24.64,82.3", "197,9,1,REST,764,872,902,370,29240,17310,17238,24.61,85.0", "198,9,1,REST,751,861,901,369,29219,17335,18650,24.63,87.0", "391,9,2,COUNT,755,868,907,358,29739,16430,1053,24.51,62.9", "392,9,2,COUNT,746,855,904,358,29737,16422,1029,24.50,62.9", "393,9,2,COUNT,745,856,903,358,29744,16424,1030,24.51,62.9", "394,9,2,BREATH,745,856,903,359,29728,16421,1022,24.51,62.9", "395,9,2,BREATH,746,857,905,358,29732,16428,1007,24.50,62.9", "396,9,2,BREATH,744,855,904,359,29729,16423,985,24.50,62.8", "397,9,2,BREATH,750,858,906,359,29731,16419,976,24.51,62.9", "398,9,2,BREATH,751,859,906,359,29637,16418,959,24.51,62.8", "399,9,2,BREATH,752,862,906,361,29447,16481,1198,24.65,64.9", "400,9,2,BREATH,752,862,905,362,29342,16665,6408,24.76,71.6", "401,9,2,BREATH,752,862,905,362,29269,16816,11115,24.79,77.8", "591,9,3,BREATH,748,860,907,358,29753,16363,928,24.57,66.6", "592,9,3,BREATH,746,855,901,358,29758,16365,913,24.59,66.6", "593,9,3,BREATH,747,857,902,360,29732,16375,979,24.67,66.8", "594,9,3,BREATH,752,860,904,359,29594,16495,1898,24.77,71.0", "595,9,3,BREATH,751,862,902,360,29497,16634,5961,24.79,77.0", "596,9,3,BREATH,752,862,903,361,29439,16736,9342,24.81,81.6", "597,9,3,BREATH,759,855,901,360,29410,16811,11901,24.86,84.9", "598,9,3,BREATH,757,854,900,361,29376,16808,11901,24.86,84.9"]}, "P3": {"label": "A volunteer with Type 2 diabetes", "lines": ["23,3,1,BREATH,772,894,958,307,28520,20275,2351,25.99,99.1", "24,3,1,BREATH,774,895,958,309,28279,20226,4959,26.02,99.2", "25,3,1,BREATH,773,895,958,310,28145,20183,7888,26.01,99.3", "26,3,1,BREATH,774,894,958,310,28079,20137,10822,26.02,99.3", "27,3,1,BREATH,773,895,958,312,28035,20101,13949,26.02,99.3", "41,3,2,BREATH,776,898,960,316,28068,19839,32767,27.50,99.2", "42,3,2,BREATH,778,899,960,317,28009,19798,32767,27.36,99.2", "43,3,2,BREATH,771,890,947,317,27994,19761,32767,27.24,99.1", "44,3,2,BREATH,776,900,960,318,27986,19730,32767,27.23,99.1", "45,3,2,BREATH,775,899,959,318,28011,19710,32767,27.23,99.1", "46,3,2,BREATH,777,899,960,318,28048,19683,32767,27.22,99.1", "64,3,3,BREATH,786,913,971,329,27999,19344,32767,27.15,99.0", "65,3,3,BREATH,787,912,972,330,27914,19329,32767,27.14,99.0", "66,3,3,BREATH,788,914,972,331,27860,19307,32767,27.11,99.0", "67,3,3,BREATH,789,914,973,331,27846,19288,32767,27.11,99.0", "68,3,3,BREATH,788,914,972,332,27852,19271,32767,27.09,99.0", "69,3,3,BREATH,788,914,973,332,27857,19256,32767,27.09,99.0", "73,3,3,DONE,790,914,973,333,27934,19170,32767,27.02,98.9", "74,3,3,DONE,792,914,972,332,27945,19167,32767,27.03,99.0", "75,3,3,DONE,792,915,973,332,27967,19133,32767,27.02,98.9", "76,3,3,DONE,787,913,973,332,28014,19121,32767,27.00,99.0", "77,3,3,DONE,789,914,973,331,28054,19098,32767,26.96,98.9", "78,3,3,DONE,790,913,973,332,28097,19086,32767,26.97,98.9", "79,3,3,DONE,791,912,972,332,28123,19073,32767,26.97,99.0", "80,3,3,DONE,789,914,973,331,28153,19053,32767,26.95,98.9", "81,3,3,DONE,782,903,963,331,28195,19039,32767,26.95,98.9", "82,3,3,DONE,786,911,973,331,28224,19024,32767,26.92,98.9", "110,3,3,DONE,794,903,970,328,29289,18727,22877,26.69,99.1", "111,3,3,DONE,793,902,970,328,29321,18730,22205,26.69,99.2", "112,3,3,DONE,792,901,970,326,29334,18710,21429,26.68,99.2", "113,3,3,DONE,790,899,965,326,29354,18714,20751,26.67,99.2", "114,3,3,DONE,794,901,968,327,29374,18704,20076,26.68,99.2", "115,3,3,DONE,792,898,965,325,29406,18697,19344,26.65,99.2", "116,3,3,DONE,787,890,958,322,29428,18686,18656,26.66,99.2", "117,3,3,DONE,778,883,948,324,29458,18684,17932,26.64,99.2", "118,3,3,DONE,796,907,975,329,29457,18675,17429,26.64,99.2"]}, "P13": {"label": "A volunteer with asthma", "lines": ["52,0,1,BREATH,787,880,921,436,29382,19844,30162,20.81,74.3", "53,0,1,BREATH,792,885,928,440,29282,19900,32767,20.81,77.7", "54,0,1,BREATH,795,887,928,441,29203,19929,32767,20.83,80.5", "55,0,1,BREATH,797,889,932,444,29154,19947,32767,20.83,82.6", "56,0,1,BREATH,801,893,936,447,29116,19950,32767,20.83,84.2", "285,0,2,BREATH,777,859,901,430,30266,17429,16152,21.48,82.5", "286,0,2,BREATH,779,865,907,430,30020,17481,20189,21.37,85.7", "287,0,2,BREATH,777,866,907,428,29809,17514,24465,21.34,88.1", "288,0,2,BREATH,773,865,907,426,29650,17549,28826,21.35,90.0", "289,0,2,BREATH,773,866,909,423,29507,17577,32767,21.36,91.5", "544,0,3,DONE,770,865,912,381,30396,16973,15165,21.43,88.5", "545,0,3,DONE,773,869,915,382,30094,17022,20297,21.57,90.4", "546,0,3,DONE,773,867,912,381,29835,17051,25110,21.51,92.0", "547,0,3,DONE,772,867,913,383,29644,17044,25110,21.51,92.0", "548,0,3,DONE,770,868,913,384,29515,17064,29215,21.54,93.3", "549,0,3,DONE,771,866,912,393,29427,17075,32676,21.50,94.1"]}};
+const COLS=['time_s','participant','reading','phase','CO','NH3','NO2','MQ3','SRAW_VOC','SRAW_NOX','CO2_ppm','temp_C','RH_pct'];
+const KEYS=['MQ3','CO','NH3','NO2','SRAW_VOC','SRAW_NOX'];
+const SCALE={MQ3:2.82,CO:4.78,NH3:6.24,NO2:6.37,SRAW_VOC:392.7,SRAW_NOX:141.7};
+const MEAN={MQ3:5.43,CO:8.41,NH3:6.34,NO2:3.93,SRAW_VOC:-526.1,SRAW_NOX:172.1};
+const GAS=[
+ {k:'MQ3',name:'Acetone',tag:'MQ-3 sensor',why:'A sweet-smelling gas made when the body burns fat instead of sugar.'},
+ {k:'SRAW_VOC',name:'Breath chemicals',tag:'SGP41 · VOCs',why:'Hundreds of tiny gases your body breathes out. A key clue in my study.'},
+ {k:'SRAW_NOX',name:'Nitrogen oxides',tag:'SGP41 · NOx',why:'Nitrogen gases that can be linked to irritated, swollen airways.'},
+ {k:'NO2',name:'Nitrogen dioxide',tag:'MiCS-6814',why:'Another nitrogen gas. The top clue the AI used in my study.'},
+ {k:'CO',name:'Carbon monoxide',tag:'MiCS-6814',why:'A gas your body makes in small amounts, and higher with smoke.'},
+ {k:'NH3',name:'Ammonia',tag:'MiCS-6814',why:'A waste gas. The body normally clears it through the liver and kidneys.'}];
+const TABS=[...GAS.map(g=>[g.k,g.name]),['CO2_ppm','Breath strength']];
+const STEPS=['Room air','Breath 1','Rest','Breath 2','Rest','Breath 3','Result'];
+const $=id=>document.getElementById(id);
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let ended=false,rows=[],raw=[],port,writer,reader,keep=false,timer=null,shownFor=null,tab='MQ3',phaseStart=null,lastPhase=null;
+
+/* ---------- build UI ---------- */
+$('gases').innerHTML=GAS.map(g=>`<div class="gas"><div class="name">${g.name}<small>${g.tag}</small></div><div class="why">${g.why}</div><div class="meter"><i id="m_${g.k}"></i></div><div class="say" id="s_${g.k}">Waiting…</div><div class="raw" id="r_${g.k}">&nbsp;</div></div>`).join('');
+$('signals').innerHTML=[['CO2_ppm','Breath strength','CO2 in the box, rises with each breath',' ppm',0],['temp_C','Breath warmth','temperature inside the box',' °C',1],['RH_pct','Breath moisture','humidity inside the box',' %',0]]
+ .map(s=>`<div class="sig"><div class="l">${s[1]}<small>${s[2]}</small></div><div class="v" id="v_${s[0]}" data-u="${s[3]}" data-d="${s[4]}">–</div></div>`).join('');
+$('track').innerHTML=STEPS.map((s,i)=>`<div id="t${i}">${s}</div>`).join('');
+$('tabs').innerHTML=TABS.map(([k,n])=>`<button data-k="${k}" class="${k===tab?'on':''}">${n}</button>`).join('');
+$('tabs').onclick=e=>{const k=e.target.dataset.k;if(!k)return;tab=k;[...$('tabs').children].forEach(b=>b.classList.toggle('on',b.dataset.k===k));drawChart();};
+$('demos').innerHTML=Object.entries(DEMOS).map(([id,d])=>`<button class="btn ghost" data-id="${id}">▶ ${d.label}</button>`).join('');
+$('demos').onclick=e=>{const id=e.target.closest('button')?.dataset.id;if(id)replay(DEMOS[id].lines,'demo: '+DEMOS[id].label.toLowerCase());};
+if(!('serial' in navigator)){$('nosupport').hidden=false;$('connect').disabled=true;}
+
+function log(s){const l=$('log');l.textContent+=s+'\n';l.scrollTop=l.scrollHeight;}
+function status(on,t){$('dot').className='dot'+(on?' on':'');$('stxt').textContent=t;}
+
+/* ---------- device ---------- */
+$('connect').onclick=async()=>{
+ try{port=await navigator.serial.requestPort();await port.open({baudRate:115200});}
+ catch(e){log('Could not connect: '+e.message);$('nosupport').innerHTML='Could not connect. Make sure the USB cable is plugged in and pick the Arduino in the list. This page needs <b>Google Chrome</b> or <b>Microsoft Edge</b> on a laptop to reach the device. The demos still work anywhere.';$('nosupport').hidden=false;return;}
+ stopReplay();reset();status(true,'Connected');$('connect').disabled=true;$('setp').disabled=false;$('save').disabled=false;
+ const enc=new TextEncoderStream();enc.readable.pipeTo(port.writable);writer=enc.writable.getWriter();
+ coach('Getting started','Warming up','The sensors need about 10 seconds to start sending data.');
+ keep=true;readLoop();
+};
+async function readLoop(){
+ const dec=new TextDecoderStream();port.readable.pipeTo(dec.writable).catch(()=>{});reader=dec.readable.getReader();let buf='';
+ try{while(keep){const {value,done}=await reader.read();if(done)break;buf+=value;let i;while((i=buf.indexOf('\n'))>=0){handle(buf.slice(0,i).trim());buf=buf.slice(i+1);}}}
+ catch(e){log('Connection lost: '+e.message);}
+ status(false,'Disconnected');$('connect').disabled=false;
+}
+$('setp').onclick=async()=>{const n=parseInt($('pnum').value);if(!(n>0)||!writer)return;await writer.write(n+'\n');reset();log('Participant set to P'+n);};
+$('save').onclick=()=>{const p=rows.length?rows[rows.length-1].participant:$('pnum').value,d=new Date();
+ const name=`P${p}_${d.toLocaleString('en-US',{month:'short'})}${d.getDate()}.csv`;
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([COLS.join(',')+'\n'+raw.join('\n')+'\n'],{type:'text/csv'}));a.download=name;a.click();log('Saved '+name);};
+$('clear').onclick=()=>{stopReplay();reset();};
+$('replay').onclick=()=>$('file').click();
+$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;replay((await f.text()).split(/\r?\n/).filter(l=>/^\d/.test(l.trim())),f.name);e.target.value='';};
+
+function stopReplay(){clearInterval(timer);timer=null;}
+function replay(lines,label){stopReplay();reset();status(true,'Playing '+label);log('Playing '+label+' (only the saved moments, sped up)');let k=0;
+ timer=setInterval(()=>{if(k>=lines.length){stopReplay();status(false,'Demo finished');ended=true;update();finish(true);return;}handle(lines[k++].trim());},300);}
+
+function reset(){ended=false;rows=[];raw=[];shownFor=null;phaseStart=null;lastPhase=null;$('result').hidden=true;update();}
+
+/* ---------- data ---------- */
+function handle(line){
+ if(!line)return;if(line[0]==='#'){log(line.slice(1).trim());return;}
+ const p=line.split(',');if(p.length!==13||isNaN(+p[0]))return;
+ const r={};COLS.forEach((c,i)=>r[c]=i===3?p[i].trim():+p[i]);
+ const key=r.phase+r.reading;if(key!==lastPhase){lastPhase=key;phaseStart=r.time_s;}
+ rows.push(r);raw.push(line);if(rows.length>4000){rows.shift();raw.shift();}
+ update();
+ if(r.phase==='DONE')finish(false);
+}
+/* same rule used to train the model: for each breath (reading 1-3), change from its first row; peak change (VOC: lowest, since lower = more gas) */
+function breathFeatures(){const out=[];
+ for(const rd of [1,2,3]){const seg=rows.filter(r=>r.reading===rd);if(seg.length<3||seg[0].SRAW_VOC===0)continue;
+  const f={};KEYS.forEach(k=>{const d=seg.map(r=>r[k]-seg[0][k]);f[k]=k==='SRAW_VOC'?Math.min(...d):Math.max(...d);});out.push(f);}
+ return out;}
+function avgFeatures(){const b=breathFeatures();if(!b.length)return null;const f={};KEYS.forEach(k=>f[k]=b.reduce((s,x)=>s+x[k],0)/b.length);f.n=b.length;return f;}
+function prob(m,f){let s=m.intercept;MODEL.features.forEach((n,i)=>{s+=m.coef[i]*((f[n.slice(2)]-m.mean[i])/m.scale[i]);});return 1/(1+Math.exp(-s));}
+
+/* ---------- screen ---------- */
+function coach(step,big,sub){$('cstep').textContent=step;$('cbig').textContent=big;$('csub').textContent=sub;}
+function ring(frac,num,lab,color){$('ringArc').style.strokeDashoffset=427.3*(1-Math.max(0,Math.min(1,frac)));$('ringArc').style.stroke=color||'#e8a317';$('rnum').textContent=num;$('rlab').textContent=lab;}
+function setTrack(i){STEPS.forEach((_,j)=>{$('t'+j).className=j<i?'done':j===i?'now':'';});}
+
+function update(){
+ const r=rows[rows.length-1];
+ if(!r){coach('Getting started','Plug in BreathScan','Connect the USB cable, then click "Connect device". Or watch a demo below.');ring(0,'–','waiting');setTrack(-1);}
+ else{
+  const n=r.reading,ph=ended?'DONE':r.phase,w=r.time_s-phaseStart,co2ok=!(r.CO2_ppm>=2000);
+  if(ph==='AIR'||ph==='REST'){
+   const need=ph==='AIR'?30:60,stepTxt=ph==='AIR'?'Step 1 · Room air':`Rest after breath ${n}`;
+   setTrack(ph==='AIR'?0:2*n);
+   if(w<need){coach(stepTxt,ph==='AIR'?'Recording room air':'Rest and breathe normally',ph==='AIR'?'The sensors are learning what normal room air looks like, so they can spot what your breath adds.':'The box is airing out so the next breath starts clean.');ring(w/need,need-w,'seconds left');}
+   else if(!co2ok&&w<180){coach(stepTxt,'Air still clearing','Waiting for the leftover breath to leave the box.');ring(Math.max(0,1-(r.CO2_ppm-2000)/8000),'…','air clearing');}
+   else{coach(n>=3?'Almost done':`Next: breath ${ph==='AIR'?1:n+1} of 3`,'Ready: press the button','When you press it, take a slow, steady breath out into the mouthpiece.');ring(1,'✓','ready','#1baf7a');}
+  }else if(ph==='COUNT'){setTrack(2*n-1);coach(`Breath ${n} of 3`,'Get ready…','Breath starts in a moment.');ring(1,'3·2·1','get ready');}
+  else if(ph==='BREATH'){setTrack(2*n-1);coach(`Breath ${n} of 3`,'Breathe out','Slow and steady into the mouthpiece.');ring(Math.min(1,w/10),w,'seconds','#2a78d6');}
+  else if(ph==='DONE'){setTrack(6);coach('All 3 breaths captured','Done. Thank you!','Your BreathPrint is ready below.');ring(1,'✓','complete','#1baf7a');}
+ }
+ updateGases(r);drawChart();drawRadar();
+}
+function words(k,d){const g=k==='SRAW_VOC'?-d:d,ratio=Math.abs(g)/SCALE[k];
+ const amt=ratio<0.25?'No real change':ratio<0.75?'Small change':ratio<1.5?'Clear change':'Big change';
+ const dir=ratio<0.25?'':g>0?' ▲ more gas':' ▼ less gas';return [amt+dir,Math.min(100,ratio/2.5*100)];}
+function updateGases(r){
+ const live=r&&r.reading>0?(()=>{const seg=rows.filter(x=>x.reading===r.reading);const f={};KEYS.forEach(k=>{const d=seg.map(x=>x[k]-seg[0][k]);f[k]=k==='SRAW_VOC'?Math.min(...d):Math.max(...d);});return f;})():null;
+ const isDone=r&&(r.phase==='DONE'||ended);const show=isDone?avgFeatures():live;
+ GAS.forEach(g=>{const k=g.k;
+  if(!r){$('m_'+k).style.width='0';$('s_'+k).textContent='Waiting…';$('r_'+k).innerHTML='&nbsp;';return;}
+  if(!show){$('m_'+k).style.width='0';$('s_'+k).textContent='Room air (starting point)';$('r_'+k).textContent='reading '+r[k];return;}
+  const [t,w]=words(k,show[k]);$('m_'+k).style.width=w+'%';$('s_'+k).textContent=t;
+  $('r_'+k).textContent=(isDone?'average of your breaths: ':`breath ${r.reading}: `)+(show[k]>0?'+':'')+Math.round(show[k])+(k==='SRAW_VOC'?' (on this sensor, lower = more gas)':' (sensor units)');});
+ ['CO2_ppm','temp_C','RH_pct'].forEach(k=>{const el=$('v_'+k);el.textContent=r?(+r[k]).toFixed(+el.dataset.d)+el.dataset.u:'–';});
+}
+
+/* ---------- charts ---------- */
+function setup(id){const cv=$(id),dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext('2d');g.scale(dpr,dpr);g.clearRect(0,0,W,H);return [g,W,H];}
+function drawChart(){
+ const [g,W,H]=setup('chart'),ink=css('--muted'),line=css('--line');g.font='13px system-ui';
+ if(!rows.length){g.fillStyle=ink;g.fillText('The graph starts when data comes in.',16,H/2);return;}
+ const data=rows.slice(-180),vals=data.map(r=>r[tab]);let lo=Math.min(...vals),hi=Math.max(...vals);if(hi-lo<1){hi+=1;lo-=1;}const pad=(hi-lo)*.12;lo-=pad;hi+=pad;
+ const L=56,R=12,T=10,B=24,x=i=>L+(W-L-R)*(data.length<2?0:i/(data.length-1)),y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));
+ g.fillStyle='rgba(42,120,214,.13)';data.forEach((r,i)=>{if(r.phase==='BREATH'){const w=Math.max(4,(W-L-R)/Math.max(1,data.length-1));g.fillRect(x(i)-w/2,T,w,H-T-B);}});
+ g.strokeStyle=line;g.fillStyle=ink;g.lineWidth=1;for(let j=0;j<=3;j++){const v=lo+(hi-lo)*j/3;g.beginPath();g.moveTo(L,y(v));g.lineTo(W-R,y(v));g.stroke();g.fillText(Math.round(v),6,y(v)+4);}
+ g.fillText(tab==='SRAW_VOC'?'lower line = more gas':'older ← → newer',L,H-6);
+ g.strokeStyle=tab==='CO2_ppm'?'#1baf7a':'#eb6834';g.lineWidth=2.5;g.lineJoin='round';g.beginPath();data.forEach((r,i)=>i?g.lineTo(x(i),y(r[tab])):g.moveTo(x(i),y(r[tab])));g.stroke();
+ const l=data.length-1;g.fillStyle=g.strokeStyle;g.beginPath();g.arc(x(l),y(vals[l]),4.5,0,7);g.fill();
+}
+function rad(f,k){let z=(f[k]-MEAN[k])/SCALE[k];if(k==='SRAW_VOC')z=-z;return Math.max(.06,Math.min(1,(z+2)/4.5));}
+function drawRadar(){
+ const [g,W,H]=setup('radar'),cx=W/2,cy=H/2+4,R=Math.min(W,H)/2-44,ink=css('--ink'),mut=css('--muted'),line=css('--line');
+ const lab=['Acetone','Carbon monoxide','Ammonia','Nitrogen dioxide','Breath chemicals','Nitrogen oxides'],ks=['MQ3','CO','NH3','NO2','SRAW_VOC','SRAW_NOX'];
+ const pt=(i,r)=>[cx+R*r*Math.sin(i*Math.PI/3),cy-R*r*Math.cos(i*Math.PI/3)];
+ g.strokeStyle=line;g.lineWidth=1;[.33,.66,1].forEach(s=>{g.beginPath();ks.forEach((_,i)=>{const [a,b]=pt(i,s);i?g.lineTo(a,b):g.moveTo(a,b);});g.closePath();g.stroke();});
+ ks.forEach((_,i)=>{const [a,b]=pt(i,1);g.beginPath();g.moveTo(cx,cy);g.lineTo(a,b);g.stroke();});
+ g.fillStyle=mut;g.font='12px system-ui';g.textAlign='center';ks.forEach((_,i)=>{const [a,b]=pt(i,1.17);g.fillText(lab[i],a,b+4);});
+ const shape=(f,col,w,fill)=>{g.beginPath();ks.forEach((k,i)=>{const [a,b]=pt(i,rad(f,k));i?g.lineTo(a,b):g.moveTo(a,b);});g.closePath();if(fill){g.fillStyle=fill;g.fill();}g.strokeStyle=col;g.lineWidth=w;g.stroke();};
+ const gm=k=>{const m=MODEL.group_means[k],o={};ks.forEach(x=>o[x]=m['d_'+x]);return o;};
+ g.setLineDash([5,4]);shape(gm('Healthy'),'#2a78d6',1.8);shape(gm('T2D'),'#eb6834',1.8);shape(gm('Asthma'),'#1baf7a',1.8);g.setLineDash([]);
+ const f=avgFeatures();
+ if(f){shape(f,ink,3,'rgba(120,140,170,.18)');}
+ else{g.fillStyle=mut;g.font='14px system-ui';g.fillText('Your shape appears after breath 1',cx,cy+R+38>H?H-6:cy+R+38);}
+}
+
+/* ---------- result ---------- */
+function finish(fromReplay){
+ if(!$('showAI').checked)return;const f=avgFeatures(),r=rows[rows.length-1];if(!f||!r)return;
+ const id=(r.participant||0)+'_'+rows.length;if(shownFor&&!fromReplay)return;shownFor=id;
+ const pT=prob(MODEL.models.T2D,f),pA=prob(MODEL.models.Asthma,f);
+ const say=(p,name)=>p<.35?'Closer to the healthy pattern':p<=.65?'In between, no clear match':`Closer to the ${name} pattern`;
+ $('mkT').style.left=(pT*100)+'%';$('mkA').style.left=(pA*100)+'%';$('sayT').textContent=say(pT,'Type 2 diabetes');$('sayA').textContent=say(pA,'asthma');
+ const top=Math.max(pT,pA);
+ $('rtitle').textContent=top<.35?'Your breath looks closest to the healthy pattern':top<=.65?'No clear match either way':`Your breath looks most like the ${pT>=pA?'Type 2 diabetes':'asthma'} pattern`;
+ $('rnote').textContent=`Based on ${f.n} breath${f.n>1?'s':''}. The AI compared how your gases changed with the 15 volunteers in my study.`;
+ $('result').hidden=false;$('result').scrollIntoView({behavior:'smooth',block:'center'});
+}
+window.addEventListener('resize',()=>{drawChart();drawRadar();});
+update();
+</script></body></html>
