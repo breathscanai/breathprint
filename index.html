@@ -259,7 +259,7 @@ function status(on,t){$('dot').className='dot'+(on?' on':'');$('stxt').textConte
 $('connect').onclick=async()=>{
  try{port=await navigator.serial.requestPort();await port.open({baudRate:115200});}
  catch(e){log('Could not connect: '+e.message);$('nosupport').innerHTML='Could not connect. Make sure the USB cable is plugged in and pick the Arduino in the list. This page needs <b>Google Chrome</b> or <b>Microsoft Edge</b> on a laptop to reach the device. The demos still work anywhere.';$('nosupport').hidden=false;return;}
- stopReplay();reset();status(true,'Connected');$('connect').disabled=true;$('setp').disabled=false;$('save').disabled=false;
+ stopReplay();reset();$('nosupport').hidden=true;status(true,'Connected');$('connect').disabled=true;$('setp').disabled=false;$('save').disabled=false;
  const enc=new TextEncoderStream();enc.readable.pipeTo(port.writable);writer=enc.writable.getWriter();
  coach('Getting started','Warming up','The sensors need about 10 seconds to start sending data.');
  keep=true;readLoop();
@@ -289,6 +289,7 @@ function handle(line){
  if(!line)return;if(line[0]==='#'){log(line.slice(1).trim());return;}
  const p=line.split(',');if(p.length!==13||isNaN(+p[0]))return;
  const r={};COLS.forEach((c,i)=>r[c]=i===3?p[i].trim():+p[i]);
+ if(rows.length&&r.time_s<rows[rows.length-1].time_s){rows=[];raw=[];lastPhase=null;shownFor=null;ended=false;$('result').hidden=true;log('Device restarted, starting fresh');}
  const key=r.phase+r.reading;if(key!==lastPhase){lastPhase=key;phaseStart=r.time_s;}
  rows.push(r);raw.push(line);if(rows.length>4000){rows.shift();raw.shift();}
  update();
@@ -315,7 +316,7 @@ function update(){
   if(ph==='AIR'||ph==='REST'){
    const need=ph==='AIR'?30:60,stepTxt=ph==='AIR'?'Step 1 · Room air':`Rest after breath ${n}`;
    setTrack(ph==='AIR'?0:2*n);
-   if(w<need){coach(stepTxt,ph==='AIR'?'Recording room air':'Rest and breathe normally',ph==='AIR'?'The sensors are learning what normal room air looks like, so they can spot what your breath adds.':'The box is airing out so the next breath starts clean.');ring(w/need,need-w,'seconds left');}
+   if(w<need){coach(stepTxt,ph==='AIR'?'Recording room air':'Rest and breathe normally',ph==='AIR'?'The sensors are learning what normal room air looks like, so they can spot what your breath adds.':'The box is airing out so the next breath starts clean.');ring(Math.max(0,w)/need,Math.max(0,Math.min(need,need-w)),'seconds left');}
    else if(!co2ok&&w<180){coach(stepTxt,'Air still clearing','Waiting for the leftover breath to leave the box.');ring(Math.max(0,1-(r.CO2_ppm-2000)/8000),'…','air clearing');}
    else{coach(n>=3?'Almost done':`Next: breath ${ph==='AIR'?1:n+1} of 3`,'Ready: press the button','When you press it, take a slow, steady breath out into the mouthpiece.');ring(1,'✓','ready','#1baf7a');}
   }else if(ph==='COUNT'){setTrack(2*n-1);coach(`Breath ${n} of 3`,'Get ready…','Breath starts in a moment.');ring(1,'3·2·1','get ready');}
