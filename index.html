@@ -286,11 +286,13 @@ function reset(){ended=false;rows=[];raw=[];shownFor=null;phaseStart=null;lastPh
 
 /* ---------- data ---------- */
 function handle(line){
- if(!line)return;if(line[0]==='#'){log(line.slice(1).trim());return;}
+ if(!line)return;if(line[0]==='#'){log(line.slice(1).trim());if(/Participant set/.test(line))lastPhase=null;return;}
  const p=line.split(',');if(p.length!==13||isNaN(+p[0]))return;
  const r={};COLS.forEach((c,i)=>r[c]=i===3?p[i].trim():+p[i]);
  if(rows.length&&r.time_s<rows[rows.length-1].time_s){rows=[];raw=[];lastPhase=null;shownFor=null;ended=false;$('result').hidden=true;log('Device restarted, starting fresh');}
  const key=r.phase+r.reading;if(key!==lastPhase){lastPhase=key;phaseStart=r.time_s;}
+ /* the device warms up the SGP41 for 10 s first (NOx reads 0); its room-air timer starts when warm-up ends */
+ r.warming=(r.phase==='AIR'&&r.SRAW_NOX===0);if(r.warming)phaseStart=r.time_s;
  rows.push(r);raw.push(line);if(rows.length>4000){rows.shift();raw.shift();}
  update();
  if(r.phase==='DONE')finish(false);
@@ -313,7 +315,8 @@ function update(){
  if(!r){coach('Getting started','Plug in BreathScan','Connect the USB cable, then click "Connect device". Or watch a demo below.');ring(0,'–','waiting');setTrack(-1);}
  else{
   const n=r.reading,ph=ended?'DONE':r.phase,w=r.time_s-phaseStart,co2ok=!(r.CO2_ppm>=2000);
-  if(ph==='AIR'||ph==='REST'){
+  if(r.warming){setTrack(0);coach('Getting started','Warming up the sensors','The breath chemical sensor needs about 10 seconds to start. Then room air recording begins.');ring(0,'…','warming up');}
+  else if(ph==='AIR'||ph==='REST'){
    const need=ph==='AIR'?30:60,stepTxt=ph==='AIR'?'Step 1 · Room air':`Rest after breath ${n}`;
    setTrack(ph==='AIR'?0:2*n);
    if(w<need){coach(stepTxt,ph==='AIR'?'Recording room air':'Rest and breathe normally',ph==='AIR'?'The sensors are learning what normal room air looks like, so they can spot what your breath adds.':'The box is airing out so the next breath starts clean.');ring(Math.max(0,w)/need,Math.max(0,Math.min(need,need-w)),'seconds left');}
