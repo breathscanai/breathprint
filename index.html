@@ -292,7 +292,9 @@ function handle(line){
  if(rows.length&&r.time_s<rows[rows.length-1].time_s){rows=[];raw=[];lastPhase=null;shownFor=null;ended=false;$('result').hidden=true;log('Device restarted, starting fresh');}
  const key=r.phase+r.reading;if(key!==lastPhase){lastPhase=key;phaseStart=r.time_s;}
  /* the device warms up the SGP41 for 10 s first (NOx reads 0); its room-air timer starts when warm-up ends */
- r.warming=(r.phase==='AIR'&&r.SRAW_NOX===0);if(r.warming)phaseStart=r.time_s;
+ /* fresh start: the box warms up 10 s, then needs 30 s of room air, so it is ready 40 s after it turns on */
+ r.fresh=(r.phase==='AIR'&&r.reading===0&&rows.length>0?rows[0].time_s<5:r.time_s<5)&&r.phase==='AIR';
+ r.warming=r.fresh&&r.time_s<10;
  rows.push(r);raw.push(line);if(rows.length>4000){rows.shift();raw.shift();}
  update();
  if(r.phase==='DONE')finish(false);
@@ -315,11 +317,12 @@ function update(){
  if(!r){coach('Getting started','Plug in BreathScan','Connect the USB cable, then click "Connect device". Or watch a demo below.');ring(0,'–','waiting');setTrack(-1);}
  else{
   const n=r.reading,ph=ended?'DONE':r.phase,w=r.time_s-phaseStart,co2ok=!(r.CO2_ppm>=2000);
-  if(r.warming){setTrack(0);coach('Getting started','Warming up the sensors','The breath chemical sensor needs about 10 seconds to start. Then room air recording begins.');ring(0,'…','warming up');}
+  if(r.warming){setTrack(0);coach('Getting started','Warming up the sensors','The sensors need about 10 seconds to start.');ring(0,40-r.time_s,'seconds left');}
   else if(ph==='AIR'||ph==='REST'){
    const need=ph==='AIR'?30:60,stepTxt=ph==='AIR'?'Step 1 · Room air':`Rest after breath ${n}`;
    setTrack(ph==='AIR'?0:2*n);
-   if(w<need){coach(stepTxt,ph==='AIR'?'Recording room air':'Rest and breathe normally',ph==='AIR'?'The sensors are learning what normal room air looks like, so they can spot what your breath adds.':'The box is airing out so the next breath starts clean.');ring(Math.max(0,w)/need,Math.max(0,Math.min(need,need-w)),'seconds left');}
+   if(r.fresh&&r.time_s<40){coach(stepTxt,'Recording room air','The sensors are learning what normal room air looks like, so they can spot what your breath adds.');ring((r.time_s-10)/30,40-r.time_s,'seconds left');}
+   else if(w<need){coach(stepTxt,ph==='AIR'?'Recording room air':'Rest and breathe normally',ph==='AIR'?'The sensors are learning what normal room air looks like, so they can spot what your breath adds.':'The box is airing out so the next breath starts clean.');ring(Math.max(0,w)/need,Math.max(0,Math.min(need,need-w)),'seconds left');}
    else if(!co2ok&&w<180){coach(stepTxt,'Air still clearing','Waiting for the leftover breath to leave the box.');ring(Math.max(0,1-(r.CO2_ppm-2000)/8000),'…','air clearing');}
    else{coach(n>=3?'Almost done':`Next: breath ${ph==='AIR'?1:n+1} of 3`,'Ready: press the button','When you press it, take a slow, steady breath out into the mouthpiece.');ring(1,'✓','ready','#1baf7a');}
   }else if(ph==='COUNT'){setTrack(2*n-1);coach(`Breath ${n} of 3`,'Get ready…','Breath starts in a moment.');ring(1,'3·2·1','get ready');}
