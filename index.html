@@ -121,7 +121,7 @@ footer{margin-top:28px;text-align:center;color:var(--muted);font-size:13px;line-
 @media (max-width:900px){.guide{grid-template-columns:1fr}.flow,.facts{grid-template-columns:1fr 1fr}}
 @media (max-width:560px){.flow,.facts{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
-</style></head><body>
+.scale .lab{gap:12px}.scale .lab span:last-child{text-align:right}.again{margin-top:18px;display:flex;flex-direction:column;gap:8px}.again span{font-weight:700;color:var(--muted);font-size:14px}</style></head><body>
 <div class="wrap">
 <header class="top">
   <div class="brand">
@@ -185,6 +185,7 @@ footer{margin-top:28px;text-align:center;color:var(--muted);font-size:13px;line-
   <div class="scale"><div class="lab"><span style="color:#2a78d6">Healthy pattern</span><span style="color:#1baf7a">Asthma pattern</span></div>
     <div class="bar" style="background:linear-gradient(90deg,#2a78d6,#c9d3e3 50%,#1baf7a)"><div class="mk" id="mkA"></div></div>
     <div class="say" id="sayA"></div></div>
+  <div class="again"><span>Try another demo:</span><div class="demos" id="demos3"></div></div>
   <div class="disclaimer"><b>This is not a diagnosis.</b> It's a pilot study with 15 volunteers. The AI was right 82% of the time for Type 2 diabetes vs. healthy and 70% for asthma vs. healthy, tested on people it had never seen. Only a doctor can test for these conditions.</div>
 </section>
 
@@ -239,7 +240,7 @@ const TABS=[...GAS.map(g=>[g.k,g.name]),['CO2_ppm','Breath strength']];
 const STEPS=['Room air','Breath 1','Rest','Breath 2','Rest','Breath 3','Result'];
 const $=id=>document.getElementById(id);
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-let ended=false,rows=[],raw=[],port,writer,reader,keep=false,timer=null,shownFor=null,tab='MQ3',phaseStart=null,lastPhase=null;
+let demoName='',ended=false,rows=[],raw=[],port,writer,reader,keep=false,timer=null,shownFor=null,tab='MQ3',phaseStart=null,lastPhase=null;
 
 /* ---------- build UI ---------- */
 $('gases').innerHTML=GAS.map(g=>`<div class="gas"><div class="name">${g.name}<small>${g.tag}</small></div><div class="why">${g.why}</div><div class="meter"><i id="m_${g.k}"></i></div><div class="say" id="s_${g.k}">Waiting…</div><div class="raw" id="r_${g.k}">&nbsp;</div></div>`).join('');
@@ -249,8 +250,9 @@ $('track').innerHTML=STEPS.map((s,i)=>`<div id="t${i}">${s}</div>`).join('');
 $('tabs').innerHTML=TABS.map(([k,n])=>`<button data-k="${k}" class="${k===tab?'on':''}">${n}</button>`).join('');
 $('tabs').onclick=e=>{const k=e.target.dataset.k;if(!k)return;tab=k;[...$('tabs').children].forEach(b=>b.classList.toggle('on',b.dataset.k===k));drawChart();};
 $('demos').innerHTML=Object.entries(DEMOS).map(([id,d])=>`<button class="btn ghost" data-id="${id}">▶ ${d.label}</button>`).join('');
-$('demos').onclick=e=>{const id=e.target.closest('button')?.dataset.id;if(id)replay(DEMOS[id].lines,'demo: '+DEMOS[id].label.toLowerCase());};
-if(!('serial' in navigator)){$('nosupport').hidden=false;$('connect').disabled=true;}
+$('demos').onclick=e=>{const id=e.target.closest('button')?.dataset.id;if(id){replay(DEMOS[id].lines,'demo: '+DEMOS[id].label.toLowerCase());demoName=DEMOS[id].label.replace(/^A /,'').replace('volunteer with ','');update();}};
+$('demos3').innerHTML=$('demos').innerHTML;$('demos3').onclick=$('demos').onclick;
+if(!('serial' in navigator)){const nb=$('nosupport');nb.innerHTML='<b>On a phone or tablet?</b> The device plugs into a laptop, but you can watch real data from my study right here. Tap one:<div class="demos" id="demos2" style="margin-top:10px">'+$('demos').innerHTML+'</div>';nb.hidden=false;$('connect').disabled=true;$('demos2').onclick=$('demos').onclick;}
 
 function log(s){const l=$('log');l.textContent+=s+'\n';l.scrollTop=l.scrollHeight;}
 function status(on,t){$('dot').className='dot'+(on?' on':'');$('stxt').textContent=t;}
@@ -259,7 +261,7 @@ function status(on,t){$('dot').className='dot'+(on?' on':'');$('stxt').textConte
 $('connect').onclick=async()=>{
  try{port=await navigator.serial.requestPort();await port.open({baudRate:115200});}
  catch(e){log('Could not connect: '+e.message);$('nosupport').innerHTML='Could not connect. Make sure the USB cable is plugged in and pick the Arduino in the list. This page needs <b>Google Chrome</b> or <b>Microsoft Edge</b> on a laptop to reach the device. The demos still work anywhere.';$('nosupport').hidden=false;return;}
- stopReplay();reset();$('nosupport').hidden=true;status(true,'Connected');$('connect').disabled=true;$('setp').disabled=false;$('save').disabled=false;
+ stopReplay();demoName='';reset();$('nosupport').hidden=true;status(true,'Connected');$('connect').disabled=true;$('setp').disabled=false;$('save').disabled=false;
  const enc=new TextEncoderStream();enc.readable.pipeTo(port.writable);writer=enc.writable.getWriter();
  coach('Getting started','Warming up','The sensors need about 10 seconds to start sending data.');
  keep=true;readLoop();
@@ -279,7 +281,8 @@ $('replay').onclick=()=>$('file').click();
 $('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;replay((await f.text()).split(/\r?\n/).filter(l=>/^\d/.test(l.trim())),f.name);e.target.value='';};
 
 function stopReplay(){clearInterval(timer);timer=null;}
-function replay(lines,label){stopReplay();reset();status(true,'Playing '+label);log('Playing '+label+' (only the saved moments, sped up)');let k=0;
+function endDemoName(){demoName='';}
+function replay(lines,label){stopReplay();reset();try{document.querySelector('.coach').scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}status(true,'Playing '+label);log('Playing '+label+' (only the saved moments, sped up)');let k=0;
  timer=setInterval(()=>{if(k>=lines.length){stopReplay();status(false,'Demo finished');ended=true;update();finish(true);return;}handle(lines[k++].trim());},300);}
 
 function reset(){ended=false;rows=[];raw=[];shownFor=null;phaseStart=null;lastPhase=null;$('result').hidden=true;update();}
@@ -295,7 +298,10 @@ function handle(line){
  /* fresh start: the box warms up 10 s, then needs 30 s of room air, so it is ready 40 s after it turns on */
  r.fresh=(r.phase==='AIR'&&r.reading===0&&rows.length>0?rows[0].time_s<5:r.time_s<5)&&r.phase==='AIR';
  r.warming=r.fresh&&r.time_s<10;
- rows.push(r);raw.push(line);if(rows.length>4000){rows.shift();raw.shift();}
+ rows.push(r);raw.push(line);
+ if(!r.warming&&r.phase!=='DONE'){const last=rows.slice(-3);const bad=last.length===3&&last.every(x=>x.SRAW_VOC===0||x.SRAW_NOX===0);
+  if(bad){$('nosupport').innerHTML='<b>The breath chemicals sensor (SGP41) is reading 0.</b> Its wires may be loose: check VIN, GND, SDA and SCL. Without it, the AI result can\'t be shown.';$('nosupport').hidden=false;}
+  else if(/SGP41/.test($('nosupport').textContent)){$('nosupport').hidden=true;}}if(rows.length>4000){rows.shift();raw.shift();}
  update();
  if(r.phase==='DONE')finish(false);
 }
@@ -308,7 +314,7 @@ function avgFeatures(){const b=breathFeatures();if(!b.length)return null;const f
 function prob(m,f){let s=m.intercept;MODEL.features.forEach((n,i)=>{s+=m.coef[i]*((f[n.slice(2)]-m.mean[i])/m.scale[i]);});return 1/(1+Math.exp(-s));}
 
 /* ---------- screen ---------- */
-function coach(step,big,sub){$('cstep').textContent=step;$('cbig').textContent=big;$('csub').textContent=sub;}
+function coach(step,big,sub){$('cstep').textContent=(demoName?'Demo, real saved data · ':'')+step;$('cbig').textContent=big;$('csub').textContent=sub;}
 function ring(frac,num,lab,color){$('ringArc').style.strokeDashoffset=427.3*(1-Math.max(0,Math.min(1,frac)));$('ringArc').style.stroke=color||'#e8a317';$('rnum').textContent=num;$('rlab').textContent=lab;}
 function setTrack(i){STEPS.forEach((_,j)=>{$('t'+j).className=j<i?'done':j===i?'now':'';});}
 
@@ -342,7 +348,7 @@ function updateGases(r){
   if(!show){$('m_'+k).style.width='0';$('s_'+k).textContent='Room air (starting point)';$('r_'+k).textContent='reading '+r[k];return;}
   const [t,w]=words(k,show[k]);$('m_'+k).style.width=w+'%';$('s_'+k).textContent=t;
   $('r_'+k).textContent=(isDone?'average of your breaths: ':`breath ${r.reading}: `)+(show[k]>0?'+':'')+Math.round(show[k])+(k==='SRAW_VOC'?' (on this sensor, lower = more gas)':' (sensor units)');});
- ['CO2_ppm','temp_C','RH_pct'].forEach(k=>{const el=$('v_'+k);el.textContent=r?(+r[k]).toFixed(+el.dataset.d)+el.dataset.u:'–';});
+ ['CO2_ppm','temp_C','RH_pct'].forEach(k=>{const el=$('v_'+k);el.textContent=r?(k==='CO2_ppm'&&r[k]>=32767?'Max (32767+ ppm)':(+r[k]).toFixed(+el.dataset.d)+el.dataset.u):'–';});
 }
 
 /* ---------- charts ---------- */
@@ -360,12 +366,12 @@ function drawChart(){
 }
 function rad(f,k){let z=(f[k]-MEAN[k])/SCALE[k];if(k==='SRAW_VOC')z=-z;return Math.max(.06,Math.min(1,(z+2)/4.5));}
 function drawRadar(){
- const [g,W,H]=setup('radar'),cx=W/2,cy=H/2+4,R=Math.min(W,H)/2-44,ink=css('--ink'),mut=css('--muted'),line=css('--line');
+ const [g,W,H]=setup('radar'),cx=W/2,cy=H/2+4,R=Math.min(W,H)/2-(W<480?62:44),ink=css('--ink'),mut=css('--muted'),line=css('--line');
  const lab=['Acetone','Carbon monoxide','Ammonia','Nitrogen dioxide','Breath chemicals','Nitrogen oxides'],ks=['MQ3','CO','NH3','NO2','SRAW_VOC','SRAW_NOX'];
  const pt=(i,r)=>[cx+R*r*Math.sin(i*Math.PI/3),cy-R*r*Math.cos(i*Math.PI/3)];
  g.strokeStyle=line;g.lineWidth=1;[.33,.66,1].forEach(s=>{g.beginPath();ks.forEach((_,i)=>{const [a,b]=pt(i,s);i?g.lineTo(a,b):g.moveTo(a,b);});g.closePath();g.stroke();});
  ks.forEach((_,i)=>{const [a,b]=pt(i,1);g.beginPath();g.moveTo(cx,cy);g.lineTo(a,b);g.stroke();});
- g.fillStyle=mut;g.font='12px system-ui';g.textAlign='center';ks.forEach((_,i)=>{const [a,b]=pt(i,1.17);g.fillText(lab[i],a,b+4);});
+ g.fillStyle=mut;g.font=(W<480?'11px':'12px')+' system-ui';g.textAlign='center';ks.forEach((_,i)=>{const [a,b]=pt(i,1.17);g.fillText(lab[i],a,b+4);});
  const shape=(f,col,w,fill)=>{g.beginPath();ks.forEach((k,i)=>{const [a,b]=pt(i,rad(f,k));i?g.lineTo(a,b):g.moveTo(a,b);});g.closePath();if(fill){g.fillStyle=fill;g.fill();}g.strokeStyle=col;g.lineWidth=w;g.stroke();};
  const gm=k=>{const m=MODEL.group_means[k],o={};ks.forEach(x=>o[x]=m['d_'+x]);return o;};
  g.setLineDash([5,4]);shape(gm('Healthy'),'#2a78d6',1.8);shape(gm('T2D'),'#eb6834',1.8);shape(gm('Asthma'),'#1baf7a',1.8);g.setLineDash([]);
