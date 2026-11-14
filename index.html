@@ -4,21 +4,22 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Crect width='44' height='44' rx='12' fill='%232a78d6'/%3E%3Cpath d='M9 17c5 0 5 4 10 4s5-4 10-4 5 4 6 4M9 24c5 0 5 4 10 4s5-4 10-4 5 4 6 4' stroke='%23fff' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>:root{
   --bg:#f3f5f9; --card:#ffffff; --ink:#14213d; --muted:#5d6b85; --line:#e3e8f0;
-  --navy:#0e1b33; --navy2:#16284a; --blue:#2a78d6; --orange:#eb6834; --green:#1baf7a; --gold:#e8a317;
+  --navy:#0e1b33; --navy2:#16284a; --blue:#2a78d6; --orange:#eb6834; --green:#1baf7a; --gold:#e8a317; --tBlue:#1d63b5; --tOrange:#b9461a; --tGreen:#0b7a52; --btn:#1d63b5;
   --shadow:0 1px 2px rgba(20,33,61,.06),0 6px 24px rgba(20,33,61,.06);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0b1324; --card:#121d33; --ink:#e8eefb; --muted:#9aa8c3; --line:#22314f; --navy:#070e1c; --navy2:#0f1a30;
+  --bg:#0b1324; --card:#121d33; --ink:#e8eefb; --muted:#9aa8c3; --line:#22314f; --navy:#070e1c; --navy2:#0f1a30; --tBlue:#7db3f5; --tOrange:#f5996e; --tGreen:#4fd6a3;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25);color-scheme:dark;}}
 :root[data-theme="dark"]{
-  --bg:#0b1324; --card:#121d33; --ink:#e8eefb; --muted:#9aa8c3; --line:#22314f; --navy:#070e1c; --navy2:#0f1a30;
+  --bg:#0b1324; --card:#121d33; --ink:#e8eefb; --muted:#9aa8c3; --line:#22314f; --navy:#070e1c; --navy2:#0f1a30; --tBlue:#7db3f5; --tOrange:#f5996e; --tGreen:#4fd6a3;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25);color-scheme:dark;}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
 [hidden]{display:none!important}
 button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 16px;font-weight:600}
 button:disabled{opacity:.45;cursor:not-allowed}
-.btn{background:var(--blue);color:#fff}
+.btn{background:var(--btn);color:#fff}
+button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
 .wrap{max-width:1240px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .gas,.sig,.panel,.two>*{min-width:0}
@@ -122,7 +123,7 @@ footer{margin-top:28px;text-align:center;color:var(--muted);font-size:13px;line-
 @media (max-width:560px){.flow,.facts{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 .scale .lab{gap:12px}.scale .lab span:last-child{text-align:right}.again{margin-top:18px;display:flex;flex-direction:column;gap:8px}.again span{font-weight:700;color:var(--muted);font-size:14px}</style></head><body>
-<div class="wrap">
+<main class="wrap">
 <header class="top">
   <div class="brand">
     <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><rect width="44" height="44" rx="12" fill="#2a78d6"/><path d="M9 17c5 0 5 4 10 4s5-4 10-4 5 4 6 4M9 24c5 0 5 4 10 4s5-4 10-4 5 4 6 4" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
@@ -163,13 +164,13 @@ footer{margin-top:28px;text-align:center;color:var(--muted);font-size:13px;line-
 <div class="two" style="margin-top:14px">
   <div class="panel">
     <div class="tabs" id="tabs"></div>
-    <canvas id="chart"></canvas>
-    <p class="note">Live, one reading every second. <b style="color:var(--blue)">Blue bands</b> show when a breath is going in.</p>
+    <canvas id="chart" role="img" aria-label="Live graph of the selected gas, one reading per second"></canvas>
+    <p class="note">Live, one reading every second. <b style="color:var(--tBlue)">Blue bands</b> show when a breath is going in.</p>
   </div>
   <div class="panel">
     <div style="font-weight:700;font-size:18px">Your BreathPrint</div>
     <p class="note" style="margin-top:4px">Each corner is one gas. The farther out the point, the more your breath changed it. The dashed shapes are the averages of my volunteer groups. <b>If your solid line looks like one of the dashed shapes, your breath looks like that group.</b></p>
-    <canvas id="radar"></canvas>
+    <canvas id="radar" role="img" aria-label="BreathPrint shape of your breath compared with the healthy, Type 2 diabetes and asthma group averages"></canvas>
     <div class="legend"><span style="--c:var(--ink)">Your breath</span><span style="--c:#2a78d6">Healthy avg</span><span style="--c:#eb6834">Type 2 diabetes avg</span><span style="--c:#1baf7a">Asthma avg</span></div>
   </div>
 </div>
@@ -179,10 +180,10 @@ footer{margin-top:28px;text-align:center;color:var(--muted);font-size:13px;line-
   <h2 id="rtitle">Your breath pattern</h2>
   <div class="note" id="rnote"></div>
   <p class="help" style="margin:12px 0 0">The dot shows which side your breath is closer to. In the middle means no clear match.</p>
-  <div class="scale"><div class="lab"><span style="color:#2a78d6">Healthy pattern</span><span style="color:#eb6834">Type 2 diabetes pattern</span></div>
+  <div class="scale"><div class="lab"><span style="color:var(--tBlue)">Healthy pattern</span><span style="color:var(--tOrange)">Type 2 diabetes pattern</span></div>
     <div class="bar" style="background:linear-gradient(90deg,#2a78d6,#c9d3e3 50%,#eb6834)"><div class="mk" id="mkT"></div></div>
     <div class="say" id="sayT"></div></div>
-  <div class="scale"><div class="lab"><span style="color:#2a78d6">Healthy pattern</span><span style="color:#1baf7a">Asthma pattern</span></div>
+  <div class="scale"><div class="lab"><span style="color:var(--tBlue)">Healthy pattern</span><span style="color:var(--tGreen)">Asthma pattern</span></div>
     <div class="bar" style="background:linear-gradient(90deg,#2a78d6,#c9d3e3 50%,#1baf7a)"><div class="mk" id="mkA"></div></div>
     <div class="say" id="sayA"></div></div>
   <div class="again"><span>Try another demo:</span><div class="demos" id="demos3"></div></div>
@@ -204,6 +205,7 @@ footer{margin-top:28px;text-align:center;color:var(--muted);font-size:13px;line-
 </div>
 
 <h3 class="sec">Watch a demo <small>real data saved from my study, replayed</small></h3>
+<p class="help">These 3 volunteers were part of my study, so the AI already learned from them. The 82% and 70% scores come from a stricter test on people the AI had never seen.</p>
 <div class="demos" id="demos"></div>
 
 <details class="res">
@@ -221,7 +223,7 @@ footer{margin-top:28px;text-align:center;color:var(--muted);font-size:13px;line-
 </details>
 
 <footer>A project by Wasif Shaik · South Iredell High School<br>Pilot research project. Not a medical device.</footer>
-</div>
+</main>
 
 <script>const MODEL={"features": ["d_MQ3", "d_CO", "d_NH3", "d_NO2", "d_SRAW_VOC", "d_SRAW_NOX"], "models": {"T2D": {"vs": "Healthy", "loo_acc": 0.818, "n": 11, "mean": [5.5145, 8.6373, 5.97, 3.5755, -478.0618, 181.03], "scale": [3.0946, 4.9732, 6.6521, 7.1196, 396.0713, 153.6348], "coef": [0.2404, -0.7099, 0.436, 0.4727, 0.4771, -0.9274], "intercept": -0.1938}, "Asthma": {"vs": "Healthy", "loo_acc": 0.7, "n": 10, "mean": [5.483, 8.75, 5.784, 2.7, -658.102, 227.2], "scale": [2.3414, 3.2704, 3.9772, 2.8655, 404.921, 138.2299], "coef": [-0.3323, -0.3813, 0.767, 0.8975, 0.0888, -0.8317], "intercept": -0.2226}}, "group_means": {"Asthma": {"d_MQ3": 5.21, "d_CO": 7.79, "d_NH3": 7.38, "d_NO2": 4.92, "d_SRAW_VOC": -658.34, "d_SRAW_NOX": 147.67}, "Healthy": {"d_MQ3": 5.66, "d_CO": 9.39, "d_NH3": 4.72, "d_NO2": 1.22, "d_SRAW_VOC": -657.95, "d_SRAW_NOX": 280.22}, "T2D": {"d_MQ3": 5.33, "d_CO": 7.73, "d_NH3": 7.47, "d_NO2": 6.4, "d_SRAW_VOC": -262.2, "d_SRAW_NOX": 62.0}}};
 const DEMOS={"P9": {"label": "A healthy volunteer", "lines": ["189,9,1,BREATH,741,849,896,364,29634,16769,416,24.41,61.9", "190,9,1,BREATH,743,850,897,365,29648,16772,417,24.42,61.9", "191,9,1,BREATH,746,853,900,366,29558,16765,417,24.42,61.9", "192,9,1,BREATH,747,854,898,366,29410,16806,467,24.50,63.3", "193,9,1,BREATH,749,857,898,368,29305,16956,5019,24.58,68.8", "194,9,1,BREATH,749,857,899,366,29296,17090,9557,24.57,74.5", "195,9,1,BREATH,751,858,899,367,29258,17184,12934,24.58,78.9", "196,9,1,BREATH,749,856,899,366,29232,17254,15348,24.64,82.3", "197,9,1,REST,764,872,902,370,29240,17310,17238,24.61,85.0", "198,9,1,REST,751,861,901,369,29219,17335,18650,24.63,87.0", "391,9,2,COUNT,755,868,907,358,29739,16430,1053,24.51,62.9", "392,9,2,COUNT,746,855,904,358,29737,16422,1029,24.50,62.9", "393,9,2,COUNT,745,856,903,358,29744,16424,1030,24.51,62.9", "394,9,2,BREATH,745,856,903,359,29728,16421,1022,24.51,62.9", "395,9,2,BREATH,746,857,905,358,29732,16428,1007,24.50,62.9", "396,9,2,BREATH,744,855,904,359,29729,16423,985,24.50,62.8", "397,9,2,BREATH,750,858,906,359,29731,16419,976,24.51,62.9", "398,9,2,BREATH,751,859,906,359,29637,16418,959,24.51,62.8", "399,9,2,BREATH,752,862,906,361,29447,16481,1198,24.65,64.9", "400,9,2,BREATH,752,862,905,362,29342,16665,6408,24.76,71.6", "401,9,2,BREATH,752,862,905,362,29269,16816,11115,24.79,77.8", "591,9,3,BREATH,748,860,907,358,29753,16363,928,24.57,66.6", "592,9,3,BREATH,746,855,901,358,29758,16365,913,24.59,66.6", "593,9,3,BREATH,747,857,902,360,29732,16375,979,24.67,66.8", "594,9,3,BREATH,752,860,904,359,29594,16495,1898,24.77,71.0", "595,9,3,BREATH,751,862,902,360,29497,16634,5961,24.79,77.0", "596,9,3,BREATH,752,862,903,361,29439,16736,9342,24.81,81.6", "597,9,3,BREATH,759,855,901,360,29410,16811,11901,24.86,84.9", "598,9,3,BREATH,757,854,900,361,29376,16808,11901,24.86,84.9"]}, "P3": {"label": "A volunteer with Type 2 diabetes", "lines": ["23,3,1,BREATH,772,894,958,307,28520,20275,2351,25.99,99.1", "24,3,1,BREATH,774,895,958,309,28279,20226,4959,26.02,99.2", "25,3,1,BREATH,773,895,958,310,28145,20183,7888,26.01,99.3", "26,3,1,BREATH,774,894,958,310,28079,20137,10822,26.02,99.3", "27,3,1,BREATH,773,895,958,312,28035,20101,13949,26.02,99.3", "41,3,2,BREATH,776,898,960,316,28068,19839,32767,27.50,99.2", "42,3,2,BREATH,778,899,960,317,28009,19798,32767,27.36,99.2", "43,3,2,BREATH,771,890,947,317,27994,19761,32767,27.24,99.1", "44,3,2,BREATH,776,900,960,318,27986,19730,32767,27.23,99.1", "45,3,2,BREATH,775,899,959,318,28011,19710,32767,27.23,99.1", "46,3,2,BREATH,777,899,960,318,28048,19683,32767,27.22,99.1", "64,3,3,BREATH,786,913,971,329,27999,19344,32767,27.15,99.0", "65,3,3,BREATH,787,912,972,330,27914,19329,32767,27.14,99.0", "66,3,3,BREATH,788,914,972,331,27860,19307,32767,27.11,99.0", "67,3,3,BREATH,789,914,973,331,27846,19288,32767,27.11,99.0", "68,3,3,BREATH,788,914,972,332,27852,19271,32767,27.09,99.0", "69,3,3,BREATH,788,914,973,332,27857,19256,32767,27.09,99.0", "73,3,3,DONE,790,914,973,333,27934,19170,32767,27.02,98.9", "74,3,3,DONE,792,914,972,332,27945,19167,32767,27.03,99.0", "75,3,3,DONE,792,915,973,332,27967,19133,32767,27.02,98.9", "76,3,3,DONE,787,913,973,332,28014,19121,32767,27.00,99.0", "77,3,3,DONE,789,914,973,331,28054,19098,32767,26.96,98.9", "78,3,3,DONE,790,913,973,332,28097,19086,32767,26.97,98.9", "79,3,3,DONE,791,912,972,332,28123,19073,32767,26.97,99.0", "80,3,3,DONE,789,914,973,331,28153,19053,32767,26.95,98.9", "81,3,3,DONE,782,903,963,331,28195,19039,32767,26.95,98.9", "82,3,3,DONE,786,911,973,331,28224,19024,32767,26.92,98.9", "110,3,3,DONE,794,903,970,328,29289,18727,22877,26.69,99.1", "111,3,3,DONE,793,902,970,328,29321,18730,22205,26.69,99.2", "112,3,3,DONE,792,901,970,326,29334,18710,21429,26.68,99.2", "113,3,3,DONE,790,899,965,326,29354,18714,20751,26.67,99.2", "114,3,3,DONE,794,901,968,327,29374,18704,20076,26.68,99.2", "115,3,3,DONE,792,898,965,325,29406,18697,19344,26.65,99.2", "116,3,3,DONE,787,890,958,322,29428,18686,18656,26.66,99.2", "117,3,3,DONE,778,883,948,324,29458,18684,17932,26.64,99.2", "118,3,3,DONE,796,907,975,329,29457,18675,17429,26.64,99.2"]}, "P13": {"label": "A volunteer with asthma", "lines": ["52,0,1,BREATH,787,880,921,436,29382,19844,30162,20.81,74.3", "53,0,1,BREATH,792,885,928,440,29282,19900,32767,20.81,77.7", "54,0,1,BREATH,795,887,928,441,29203,19929,32767,20.83,80.5", "55,0,1,BREATH,797,889,932,444,29154,19947,32767,20.83,82.6", "56,0,1,BREATH,801,893,936,447,29116,19950,32767,20.83,84.2", "285,0,2,BREATH,777,859,901,430,30266,17429,16152,21.48,82.5", "286,0,2,BREATH,779,865,907,430,30020,17481,20189,21.37,85.7", "287,0,2,BREATH,777,866,907,428,29809,17514,24465,21.34,88.1", "288,0,2,BREATH,773,865,907,426,29650,17549,28826,21.35,90.0", "289,0,2,BREATH,773,866,909,423,29507,17577,32767,21.36,91.5", "544,0,3,DONE,770,865,912,381,30396,16973,15165,21.43,88.5", "545,0,3,DONE,773,869,915,382,30094,17022,20297,21.57,90.4", "546,0,3,DONE,773,867,912,381,29835,17051,25110,21.51,92.0", "547,0,3,DONE,772,867,913,383,29644,17044,25110,21.51,92.0", "548,0,3,DONE,770,868,913,384,29515,17064,29215,21.54,93.3", "549,0,3,DONE,771,866,912,393,29427,17075,32676,21.50,94.1"]}};
