@@ -131,6 +131,7 @@ footer{margin-top:28px;text-align:center;color:var(--muted);font-size:13px;line-
   </div>
   <div class="right">
     <div class="pill"><span class="dot" id="dot"></span><span id="stxt">Not connected</span></div>
+    <button class="btn ghost" id="exitDemo" hidden>✕ Exit demo</button>
     <button class="btn" id="connect">Connect device</button>
   </div>
 </header>
@@ -186,7 +187,7 @@ footer{margin-top:28px;text-align:center;color:var(--muted);font-size:13px;line-
   <div class="scale"><div class="lab"><span style="color:var(--tBlue)">Healthy pattern</span><span style="color:var(--tGreen)">Asthma pattern</span></div>
     <div class="bar" style="background:linear-gradient(90deg,#2a78d6,#c9d3e3 50%,#1baf7a)"><div class="mk" id="mkA"></div></div>
     <div class="say" id="sayA"></div></div>
-  <div class="again"><span>Try another demo:</span><div class="demos" id="demos3"></div></div>
+  <div class="again"><span>Try another demo:</span><div class="demos" id="demos3"></div><div><button class="btn" id="exitDemo2" hidden>✕ Exit demo and go back to the device</button></div></div>
   <div class="disclaimer"><b>This is not a diagnosis.</b> It's a pilot study with 15 volunteers. The AI was right 82% of the time for Type 2 diabetes vs. healthy and 70% for asthma vs. healthy, tested on people it had never seen. Only a doctor can test for these conditions.</div>
 </section>
 
@@ -252,7 +253,7 @@ $('track').innerHTML=STEPS.map((s,i)=>`<div id="t${i}">${s}</div>`).join('');
 $('tabs').innerHTML=TABS.map(([k,n])=>`<button data-k="${k}" class="${k===tab?'on':''}">${n}</button>`).join('');
 $('tabs').onclick=e=>{const k=e.target.dataset.k;if(!k)return;tab=k;[...$('tabs').children].forEach(b=>b.classList.toggle('on',b.dataset.k===k));drawChart();};
 $('demos').innerHTML=Object.entries(DEMOS).map(([id,d])=>`<button class="btn ghost" data-id="${id}">▶ ${d.label}</button>`).join('');
-$('demos').onclick=e=>{const id=e.target.closest('button')?.dataset.id;if(id){replay(DEMOS[id].lines,'demo: '+DEMOS[id].label.toLowerCase());demoName=DEMOS[id].label.replace(/^A /,'').replace('volunteer with ','');update();}};
+$('demos').onclick=e=>{const id=e.target.closest('button')?.dataset.id;if(id){demoName=DEMOS[id].label;replay(DEMOS[id].lines,'demo: '+DEMOS[id].label.toLowerCase());}};
 $('demos3').innerHTML=$('demos').innerHTML;$('demos3').onclick=$('demos').onclick;
 if(!('serial' in navigator)){const nb=$('nosupport');nb.innerHTML='<b>On a phone or tablet?</b> The device plugs into a laptop, but you can watch real data from my study right here. Tap one:<div class="demos" id="demos2" style="margin-top:10px">'+$('demos').innerHTML+'</div>';nb.hidden=false;$('connect').disabled=true;$('demos2').onclick=$('demos').onclick;}
 
@@ -270,7 +271,7 @@ $('connect').onclick=async()=>{
 };
 async function readLoop(){
  const dec=new TextDecoderStream();port.readable.pipeTo(dec.writable).catch(()=>{});reader=dec.readable.getReader();let buf='';
- try{while(keep){const {value,done}=await reader.read();if(done)break;buf+=value;let i;while((i=buf.indexOf('\n'))>=0){handle(buf.slice(0,i).trim());buf=buf.slice(i+1);}}}
+ try{while(keep){const {value,done}=await reader.read();if(done)break;buf+=value;let i;while((i=buf.indexOf('\n'))>=0){if(!demoName)handle(buf.slice(0,i).trim());buf=buf.slice(i+1);}}}
  catch(e){log('Connection lost: '+e.message);}
  status(false,'Disconnected');$('connect').disabled=false;
 }
@@ -278,14 +279,23 @@ $('setp').onclick=async()=>{const n=parseInt($('pnum').value);if(!(n>0)||!writer
 $('save').onclick=()=>{const p=rows.length?rows[rows.length-1].participant:$('pnum').value,d=new Date();
  const name=`P${p}_${d.toLocaleString('en-US',{month:'short'})}${d.getDate()}.csv`;
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([COLS.join(',')+'\n'+raw.join('\n')+'\n'],{type:'text/csv'}));a.download=name;a.click();log('Saved '+name);};
-$('clear').onclick=()=>{stopReplay();reset();};
+$('clear').onclick=()=>{stopReplay();demoName='';reset();};
 $('replay').onclick=()=>$('file').click();
 $('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;replay((await f.text()).split(/\r?\n/).filter(l=>/^\d/.test(l.trim())),f.name);e.target.value='';};
 
-function stopReplay(){clearInterval(timer);timer=null;}
+function stopReplay(){clearTimeout(timer);clearInterval(timer);timer=null;}
 function endDemoName(){demoName='';}
-function replay(lines,label){stopReplay();reset();try{document.querySelector('.coach').scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}status(true,'Playing '+label);log('Playing '+label+' (only the saved moments, sped up)');let k=0;
- timer=setInterval(()=>{if(k>=lines.length){stopReplay();status(false,'Demo finished');ended=true;update();finish(true);return;}handle(lines[k++].trim());},300);}
+$('exitDemo2').onclick=()=>$('exitDemo').click();
+$('exitDemo').onclick=()=>{stopReplay();demoName='';reset();$('exitDemo').hidden=true;if(port&&keep){status(true,'Connected');coach('Back to your device','Waiting for the next reading','Live data from BreathScan will show up in a second.');}else{status(false,'Not connected');}window.scrollTo({top:0,behavior:'smooth'});};
+function replay(lines,label){stopReplay();reset();try{document.querySelector('.coach').scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}
+ status(true,'Playing '+label);log('Playing '+label+' (only the saved moments, slowed down so each step is easy to follow)');
+ coach('Demo, real saved data','Starting the demo','Replaying a volunteer from my study. Only the key moments were saved, so some steps are short.');ring(0,'▶','starting','#2a78d6');
+ let k=0,prev='';
+ const step=()=>{if(k>=lines.length){stopReplay();status(!!(port&&keep),port&&keep?'Connected · demo finished':'Demo finished');ended=true;update();finish(true);return;}
+  const line=lines[k++].trim();const p=line.split(',');const key=(p[3]||'')+(p[2]||'');
+  handle(line);const changed=key!==prev;prev=key;
+  timer=setTimeout(step,changed?1800:700);};
+ timer=setTimeout(step,2200);}
 
 function reset(){ended=false;rows=[];raw=[];shownFor=null;phaseStart=null;lastPhase=null;$('result').hidden=true;update();}
 
@@ -316,13 +326,14 @@ function avgFeatures(){const b=breathFeatures();if(!b.length)return null;const f
 function prob(m,f){let s=m.intercept;MODEL.features.forEach((n,i)=>{s+=m.coef[i]*((f[n.slice(2)]-m.mean[i])/m.scale[i]);});return 1/(1+Math.exp(-s));}
 
 /* ---------- screen ---------- */
-function coach(step,big,sub){$('cstep').textContent=(demoName?'Demo, real saved data · ':'')+step;$('cbig').textContent=big;$('csub').textContent=sub;}
+function coach(step,big,sub){$('exitDemo').hidden=!demoName;$('exitDemo2').hidden=!demoName;$('cstep').textContent=(demoName?'Demo, real saved data · ':'')+step;$('cbig').textContent=big;$('csub').textContent=sub;}
 function ring(frac,num,lab,color){$('ringArc').style.strokeDashoffset=427.3*(1-Math.max(0,Math.min(1,frac)));$('ringArc').style.stroke=color||'#e8a317';$('rnum').textContent=num;$('rlab').textContent=lab;}
 function setTrack(i){STEPS.forEach((_,j)=>{$('t'+j).className=j<i?'done':j===i?'now':'';});}
 
 function update(){
  const r=rows[rows.length-1];
- if(!r){coach('Getting started','Plug in BreathScan','Connect the USB cable, then click "Connect device". Or watch a demo below.');ring(0,'–','waiting');setTrack(-1);}
+ if(!r&&timer){/* demo is starting; keep the starting message */}
+ else if(!r){coach('Getting started','Plug in BreathScan','Connect the USB cable, then click "Connect device". Or watch a demo below.');ring(0,'–','waiting');setTrack(-1);}
  else{
   const n=r.reading,ph=ended?'DONE':r.phase,w=r.time_s-phaseStart,co2ok=!(r.CO2_ppm>=2000);
   if(r.warming){setTrack(0);coach('Getting started','Warming up the sensors','The sensors need about 10 seconds to start.');ring(0,40-r.time_s,'seconds left');}
@@ -384,7 +395,7 @@ function drawRadar(){
 
 /* ---------- result ---------- */
 function finish(fromReplay){
- if(!$('showAI').checked)return;const f=avgFeatures(),r=rows[rows.length-1];if(!f||!r)return;
+ if(!$('showAI').checked&&!demoName)return;const f=avgFeatures(),r=rows[rows.length-1];if(!f||!r)return;
  const id=(r.participant||0)+'_'+rows.length;if(shownFor&&!fromReplay)return;shownFor=id;
  const pT=prob(MODEL.models.T2D,f),pA=prob(MODEL.models.Asthma,f);
  const say=(p,name)=>p<.35?'Closer to the healthy pattern':p<=.65?'In between, no clear match':`Closer to the ${name} pattern`;
@@ -392,7 +403,7 @@ function finish(fromReplay){
  const top=Math.max(pT,pA);
  $('rtitle').textContent=top<.35?'Your breath looks closest to the healthy pattern':top<=.65?'No clear match either way':`Your breath looks most like the ${pT>=pA?'Type 2 diabetes':'asthma'} pattern`;
  $('rnote').textContent=`Based on ${f.n} breath${f.n>1?'s':''}. The AI compared how your gases changed with the 15 volunteers in my study.`;
- $('result').hidden=false;$('result').scrollIntoView({behavior:'smooth',block:'center'});
+ $('result').hidden=false;setTimeout(()=>{try{$('result').scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}},300);
 }
 window.addEventListener('resize',()=>{drawChart();drawRadar();});
 update();
